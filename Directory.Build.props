@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <Deterministic>true</Deterministic>
+    <PathMap>$(MSBuildThisFileDirectory)=Z:\</PathMap>
+  </PropertyGroup>
+</Project>

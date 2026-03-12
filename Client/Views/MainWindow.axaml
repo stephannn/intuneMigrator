@@ -1,0 +1,137 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:intuneMigratorClient.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="650" d:DesignHeight="500"
+        x:Class="intuneMigratorClient.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/microsoft-intune-48.png"
+        Title="intune Migrator Client"
+        Width="650" Height="550">
+
+    <Design.DataContext>
+        <!-- This only sets the DataContext for the previewer in an IDE,
+             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <Grid ColumnDefinitions="*, *" Margin="20">
+        <!-- Left Side: Buttons -->
+        <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="20" Margin="0,0,20,0">
+            <TextBlock Text="Intune Tenant Migrator" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
+
+            <Button Content="{Binding ButtonLoginText}" 
+                    Command="{Binding LoginCommand}" 
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    IsVisible="{Binding !IsAuthenticated}"/>
+
+            <StackPanel IsVisible="{Binding IsAuthenticated}" Spacing="10">
+                <TextBlock Text="{Binding UserName, StringFormat='Hi {0}'}" 
+                           Foreground="Green" 
+                           FontWeight="Bold" 
+                           HorizontalAlignment="Center"/>
+                <Button Content="{Binding ButtonLogoutText}" 
+                        Command="{Binding LogoutCommand}" 
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"/>
+            </StackPanel>
+
+            <CheckBox Content="{Binding CheckboxBackupText}"
+                      IsChecked="{Binding IsAgreed}"
+                      IsEnabled="{Binding IsAuthenticated}"
+                      HorizontalAlignment="Left"/>
+
+            <CheckBox Content="{Binding CheckboxWipeDeviceText}"
+                      IsChecked="{Binding IsWipeDevice}"
+                      IsEnabled="{Binding IsAuthenticated}"
+                      IsVisible="{Binding IsWipeOptionVisible}"
+                      HorizontalAlignment="Left"/>
+
+            <Button Content="{Binding ButtonCheckMigrationText}" 
+                    Command="{Binding CheckMigrationCommand}" 
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"/>
+
+            <Button Content="{Binding ButtonStartMigrationText}" 
+                    Command="{Binding MigrateCommand}" 
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"/>
+
+            <Button Content="{Binding ButtonWipeDeviceText}" 
+                    Command="{Binding WipeDeviceCommand}" 
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    IsEnabled="{Binding IsWipeButtonEnabled}"
+                    IsVisible="{Binding IsWipeOptionVisible}"/>
+
+            <Button Content="{Binding ButtonRetryHashText}" 
+                    Command="{Binding RetrieveHashCommand}" 
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    IsVisible="{Binding IsHashRetrievalFailed}"/>
+
+            <Grid ColumnDefinitions="*, Auto" IsVisible="{Binding IsBusy}">
+                <ProgressBar Grid.Column="0" IsIndeterminate="True" Height="4" VerticalAlignment="Center"/>
+                <Button Grid.Column="1" Content="{Binding ButtonCancelText}" 
+                        Command="{Binding CancelLoginCommand}"
+                        IsVisible="{Binding IsLoginInProgress}"
+                        Margin="10,0,0,0"
+                        VerticalAlignment="Center"/>
+            </Grid>
+            
+            <TextBlock Text="{Binding LoginTimeoutSeconds, StringFormat='Timeout in: {0}s'}" 
+                       HorizontalAlignment="Center"
+                       IsVisible="{Binding IsLoginInProgress}"/>
+
+            <Button Content="{Binding ButtonDebugText}"
+                    Command="{Binding DebugServiceCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    IsVisible="{Binding IsDebug}"/>
+
+            <Button Content="{Binding ButtonCloseText}" 
+                    Command="{Binding CloseCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"/>
+        </StackPanel>
+
+        <!-- Right Side: Logo and Instructions -->
+        <Grid Grid.Column="1" RowDefinitions="Auto, Auto, Auto, *, Auto">
+            <Image Grid.Row="0" Source="{Binding CompanyLogo}" Width="300" Height="150" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,0,0,20"/>
+            <ScrollViewer Grid.Row="1" Height="150" VerticalScrollBarVisibility="Auto" Margin="0,0,0,20">
+                <TextBlock Text="{Binding AppInstructions}" TextWrapping="Wrap" />
+            </ScrollViewer>
+            
+            <!-- Device Code Prompt -->
+            <StackPanel Grid.Row="2" IsVisible="{Binding ShowDeviceCodePrompt}" Margin="0,0,0,20" Spacing="5">
+                <TextBlock Text="{Binding DeviceCodeActionRequiredText}" FontWeight="Bold" Foreground="OrangeRed"/>
+                <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding DeviceCodeStep1Text}" VerticalAlignment="Center"/>
+                    <Button Content="{Binding DeviceCodeUrl}" Command="{Binding OpenDeviceCodeUrlCommand}" 
+                            Margin="5,0,0,0" Padding="5,2" Cursor="Hand" Background="Transparent" Foreground="DodgerBlue" BorderThickness="0"/>
+                </WrapPanel>
+                <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding DeviceCodeStep2Text}" VerticalAlignment="Center"/>
+                    <Button Content="{Binding DeviceCode}" Command="{Binding CopyDeviceCodeCommand}" 
+                            Margin="5,0,0,0" Padding="5,2" FontWeight="Bold" Cursor="Hand" ToolTip.Tip="{Binding DeviceCodeCopyTooltipText}"/>
+                </WrapPanel>
+            </StackPanel>
+
+            <!-- Console Output -->
+            <Border Grid.Row="3" BorderBrush="Gray" BorderThickness="1" CornerRadius="3" Padding="10" Margin="0,0,0,20" MinHeight="70">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <SelectableTextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" FontFamily="Consolas, Monospace"/>
+                </ScrollViewer>
+            </Border>
+
+            <!-- Night Mode -->
+            <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
+                <TextBlock Text="Night Mode" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <ToggleSwitch IsChecked="{Binding IsNightMode}" OnContent="" OffContent=""/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+
+</Window>

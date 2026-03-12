@@ -1,0 +1,72 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <ApplicationIcon>Assets\microsoft-intune-48.ico</ApplicationIcon>
+    
+    <Company>SH</Company>
+    <Description>This is the client application for the Intune Migrator.</Description>
+    <Product>Intune Migrator Client</Product>
+    <Copyright>Copyright © 2026 SH</Copyright>
+    
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Models\" />
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Config\Settings.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>Config\Settings.xml</TargetPath>
+    </None>
+    <None Update="Config\Settings.Development.xml" Condition="'$(Configuration)' == 'Debug'">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>Config\Settings.Development.xml</TargetPath>
+    </None>
+    <None Update="Config\Strings.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>Config\Strings.xml</TargetPath>
+    </None>
+    <None Update="Assets\intuneMigration.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.3.12" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.12" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.12" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.12" />
+    <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
+    <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.3.12" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Microsoft.Identity.Client" Version="4.83.1" />
+    <PackageReference Include="System.Management" Version="10.0.3" />
+  </ItemGroup>
+
+  <Target Name="SignApp" AfterTargets="Publish" Condition="'$(Configuration)' == 'Release'">
+    <Message Text="Signing application..." Importance="High" />
+    
+    <PropertyGroup>
+      <SignToolPathUnix>$(ProjectDir)../_Assets/osslsigncode/osslsigncode.exe</SignToolPathUnix>
+      <CertPathUnix>$(ProjectDir)../_Assets/intuneMigrator.pfx</CertPathUnix>
+      <SignToolPathWin>$(ProjectDir)..\_Assets\osslsigncode\osslsigncode.exe</SignToolPathWin>
+      <CertPathWin>$(ProjectDir)..\_Assets\intuneMigrator.pfx</CertPathWin>
+      <CertPass>intuneMigrator</CertPass>
+      <TargetFile>$(PublishDir)/$(AssemblyName).exe</TargetFile>
+    </PropertyGroup>
+
+    <Exec Condition="'$(OS)' != 'Windows_NT'" Command="wine &quot;$(SignToolPathUnix)&quot; sign -pkcs12 &quot;$(CertPathUnix)&quot; -pass $(CertPass) -in &quot;$(TargetFile)&quot; -out &quot;$(TargetFile)-signed&quot;" />
+    <Exec Condition="'$(OS)' != 'Windows_NT'" Command="mv &quot;$(TargetFile)-signed&quot; &quot;$(TargetFile)&quot;" />
+    
+    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="&quot;$(SignToolPathWin)&quot; sign -pkcs12 &quot;$(CertPathWin)&quot; -pass $(CertPass) -in &quot;$(TargetFile)&quot; -out &quot;$(TargetFile)-signed&quot;" />
+    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="move /Y &quot;$(TargetFile)-signed&quot; &quot;$(TargetFile)&quot;" />
+    
+  </Target>
+</Project>

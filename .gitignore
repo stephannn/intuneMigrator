@@ -1,0 +1,42 @@
+# build folders
+Api/bin/
+Api/obj/
+Client/bin/
+Client/obj/
+Service/bin/
+Service/obj/
+
+# user specific
+*.user
+*.suo
+*.userprefs
+
+# VSCode
+.vscode/
+
+# Rider
+_Assets/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# secrets
+appsettings.Development.json
+appsettings.Local.json
+Settings.Development.xml
+secrets/
+private/
+
+# logs
+*.log
+logs/
+
+# certificates
+*.pfx
+*.pem
+*.key
+
+# database
+*.db
+*.sqlite

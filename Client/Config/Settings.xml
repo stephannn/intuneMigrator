@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Configuration>
+  <!-- TenantId and ClientId are required for user authentication -->
+  <TenantId></TenantId>
+  <ClientId></ClientId>
+  <!-- ServerApiId is the base URL of the API, without trailing slash -->
+  <ServerApiId>https://localhost:7137</ServerApiId>
+  <IgnoreSslErrors>true</IgnoreSslErrors>
+  <ApiEndpointMigration>/api/MigrationRequest</ApiEndpointMigration>
+  <ApiEndpointCheckMigration>/api/MigrationCheck</ApiEndpointCheckMigration>
+  <!-- Scopes for authentication, usually in the format api://{clientId}/{scopeName} -->
+  <Scopes>api://ClientId/Migration.Run</Scopes>
+  <!-- DeviceCodeFlow determines whether to use device code flow for authentication, which is useful for console apps or when redirect URI is not feasible -->
+  <DeviceCodeFlow>false</DeviceCodeFlow>
+  <!-- Redirect Uri for login, usually localhost -->
+  <RedirectUri>http://localhost</RedirectUri>
+  <!-- SpaOrigin is used for CORS when calling the API, usually the same as RedirectUri -->
+  <SpaOrigin>http://localhost</SpaOrigin>
+  <!-- LogoPath is the path to the logo image used in the UI -->
+  <LogoPath>Assets/intuneMigration.png</LogoPath>
+  <!-- WipeDevice values can be false, local or remotelocal -->
+  <WipeDevice>local</WipeDevice>
+  <Debug>false</Debug>
+</Configuration>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Strings>
+  <Instruction Language="en">
+    Welcome to the Intune Tenant Migrator.
+    
+    1. Click 'Login to New Tenant' to authenticate.
+    2. Once logged in, click 'Start Migration'.
+    3. The device will be wiped and registered to the new tenant.
+    
+    Please ensure you have backed up your data.
+    The computer must be connected to the company network.
+  </Instruction>
+  <Instruction Language="de">
+    Willkommen beim Intune Tenant Migrator.
+    
+    1. Klicken Sie auf 'Im neuen Mandanten anmelden', um sich zu authentifizieren.
+    2. Sobald Sie angemeldet sind, klicken Sie auf 'Migration starten'.
+    3. Das Gerät wird zurückgesetzt und im neuen Mandanten registriert.
+    
+    Bitte stellen Sie sicher, dass Sie Ihre Daten gesichert haben.
+    Der Computer muss mit dem Firmennetzwerk verbunden sein.
+  </Instruction>
+  <ButtonLogin Language="en">Login to New Tenant</ButtonLogin>
+  <ButtonLogin Language="de">Im neuen Mandanten anmelden</ButtonLogin>
+
+  <ButtonLogout Language="en">Logout</ButtonLogout>
+  <ButtonLogout Language="de">Abmelden</ButtonLogout>
+
+  <ButtonCheckMigration Language="en">Check Migration</ButtonCheckMigration>
+  <ButtonCheckMigration Language="de">Migration prüfen</ButtonCheckMigration>
+
+  <ButtonStartMigration Language="en">Start Migration</ButtonStartMigration>
+  <ButtonStartMigration Language="de">Migration starten</ButtonStartMigration>
+
+  <ButtonRetryHash Language="en">Retry Hash Retrieval</ButtonRetryHash>
+  <ButtonRetryHash Language="de">Hash-Abruf wiederholen</ButtonRetryHash>
+
+  <ButtonCancel Language="en">Cancel</ButtonCancel>
+  <ButtonCancel Language="de">Abbrechen</ButtonCancel>
+
+  <ButtonDebug Language="en">Debug Service</ButtonDebug>
+  <ButtonDebug Language="de">Dienst debuggen</ButtonDebug>
+
+  <ButtonClose Language="en">Close</ButtonClose>
+  <ButtonClose Language="de">Schließen</ButtonClose>
+
+  <ButtonWipeDevice Language="en">Wipe Device</ButtonWipeDevice>
+  <ButtonWipeDevice Language="de">Gerät zurücksetzen</ButtonWipeDevice>
+
+  <CheckboxBackup Language="en">I confirm that I have backed up my data</CheckboxBackup>
+  <CheckboxBackup Language="de">Ich bestätige, dass ich meine Daten gesichert habe</CheckboxBackup>
+
+  <CheckboxWipeDevice Language="en">Wipe my device after migration (Factory Reset)</CheckboxWipeDevice>
+  <CheckboxWipeDevice Language="de">Mein Gerät nach der Migration zurücksetzen (Factory Reset)</CheckboxWipeDevice>
+
+  <DeviceCodeActionRequired Language="en">Action Required:</DeviceCodeActionRequired>
+  <DeviceCodeActionRequired Language="de">Aktion erforderlich:</DeviceCodeActionRequired>
+
+  <DeviceCodeStep1 Language="en">1. Open Link: </DeviceCodeStep1>
+  <DeviceCodeStep1 Language="de">1. Link öffnen: </DeviceCodeStep1>
+
+  <DeviceCodeStep2 Language="en">2. Copy Code: </DeviceCodeStep2>
+  <DeviceCodeStep2 Language="de">2. Code kopieren: </DeviceCodeStep2>
+
+  <DeviceCodeCopyTooltip Language="en">Click to copy code</DeviceCodeCopyTooltip>
+  <DeviceCodeCopyTooltip Language="de">Klicken zum Kopieren</DeviceCodeCopyTooltip>
+</Strings>
