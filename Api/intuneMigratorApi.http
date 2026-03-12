@@ -1,6 +1,0 @@
-@intuneMigratorApi_HostAddress = http://localhost:5200
-
-GET {{intuneMigratorApi_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

@@ -33,7 +33,7 @@ Intune Migrator is a three-component application designed to facilitate device m
 │                                             │
 │  Client App (UI)                            │
 │  └── Handles user authorization             │
-│  └── Initiates migration workflow            │
+│  └── Initiates migration workflow           │
 │                                             │
 │  Client Service (Windows Service)           │
 │  └── Requests hardware hash                 │
@@ -137,9 +137,16 @@ The Settings.xml in the client config folder contains the application settings r
     - true: Enables debug mode (extended logging, diagnostics).
     - false: Normal operation mode.
 
+### Service Configuration
+
 #### Service Settings
 
 To secure the connection between client and service, a certificate is required. The Client Certificate Thumbprint has to be stored in the appsettings.json of the service. When empty, no client certificate check is done.
+
+#### Create Windows Service
+```cmd
+sc.exe create ServiceName binPath=C:\path\to\intuneMigratorService.exe
+```
 
 ### Azure Applications
 
@@ -147,7 +154,7 @@ To secure the connection between client and service, a certificate is required. 
 Configure an Azure AD application for the client with the following requirements:
 - Tenant ID and Application ID
 - Usage controlled via Azure AD groups
-- When using Conditional Access, `Single-page application` authentication must be used in combination with SpaOrigin in the Settings.xml
+- When using Conditional Access, `Single-page application` authentication must be used in combination with SpaOrigin in the Settings.xml of the Client
 
 #### Source Tenant & Destination Tenant Applications
 Configure separate applications for source and destination tenants with these **required permissions**:
@@ -158,7 +165,7 @@ Configure separate applications for source and destination tenants with these **
 | `DeviceManagementManagedDevices.ReadWrite.All` | Application | Set primary user, delete Intune object from source tenant |
 | `DeviceManagementServicesConfig.ReadWrite.All` | Application | Autopilot registration and device deletion |
 | `User.Read.All` | Application | Read user attributes from Entra ID |
-| `DeviceManagementManagedDevices.PrivilegedOperations.All` | Application | Perform remote wipe operations (only required when remote wipe is turned on in the Settings.xml) |
+| `DeviceManagementManagedDevices.PrivilegedOperations.All` | Application | Perform remote wipe operations (only required when remote wipe is turned on in the Settings.xml of the Client) |
 
 ### Certificate Management
 
@@ -204,11 +211,6 @@ wine _Assets/osslsigncode/osslsigncode.exe verify \
 ```
 
 ### Azure Web App Setup
-
-#### Create Windows Service
-```cmd
-sc.exe create ServiceName binPath=C:\path\to\intuneMigratorService.exe
-```
 
 #### Key Vault Configuration
 Assign the following roles to the web app identity:
