@@ -15,7 +15,11 @@ Service/obj/
 .vscode/
 
 # Rider
-_Assets/
+_Assets/Bruno
+_Assets/osslsigncode
+_Assets/Deploy-Application.ps1
+_Assets/intuneMigrator.pfx
+_Assets/qemu.csv
 
 # OS
 .DS_Store

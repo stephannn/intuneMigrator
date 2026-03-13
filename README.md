@@ -2,6 +2,8 @@
 
 A comprehensive solution for migrating devices from one Microsoft Intune tenant to another, ensuring seamless device migration with hardware hash management and device wiping capabilities.
 
+![intuneMigrator Client](_Assets/intuneMigratorClient.png)
+
 ## Table of Contents
 
 - [Overview](#overview)
@@ -10,6 +12,7 @@ A comprehensive solution for migrating devices from one Microsoft Intune tenant 
 - [Building](#building)
 - [Configuration](#configuration)
   - [Client Configuration](#client-configuration)
+  - [Service Configuration](#service-configuration)
   - [Azure Applications](#azure-applications)
   - [Certificate Management](#certificate-management)
   - [Azure Web App Setup](#azure-web-app-setup)
@@ -209,6 +212,8 @@ mv "Client/bin/Debug/net10.0/win-x64/intuneMigratorClient-signed.exe" \
 wine _Assets/osslsigncode/osslsigncode.exe verify \
   -in "Client/bin/Debug/net10.0/win-x64/intuneMigratorClient.exe"
 ```
+
+For signing under Linux you can use osslsigncode: https://github.com/mtrojnar/osslsigncode
 
 ### Azure Web App Setup
 
