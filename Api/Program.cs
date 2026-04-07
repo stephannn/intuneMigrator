@@ -1,5 +1,6 @@
 using Azure.Identity;
 using intuneMigratorApi.Data;
+using intuneMigratorApi.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Graph;
@@ -19,14 +20,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"))
     ; // End chain here. We do not use the user token for downstream Graph calls.
 
-// Register GraphServiceClient for the separate Intune Tenant using Client Credentials
-builder.Services.AddKeyedScoped<GraphServiceClient>("Source", (sp, key) =>
-{
-    var config = sp.GetRequiredService<IConfiguration>().GetSection("IntuneSourceTenantConfig");
-    var credential = new ClientSecretCredential(config["TenantId"], config["ClientId"], config["ClientSecret"]);
-    // .default scope is required for client credentials flow
-    return new GraphServiceClient(credential, new[] { "https://graph.microsoft.com/.default" });
-});
+builder.Services.AddSingleton<SourceTenantClientFactory>();
 
 builder.Services.AddKeyedScoped<GraphServiceClient>("Destination", (sp, key) =>
 {

@@ -14,6 +14,7 @@ A comprehensive solution for migrating devices from one Microsoft Intune tenant 
   - [Client Configuration](#client-configuration)
   - [Service Configuration](#service-configuration)
   - [Azure Applications](#azure-applications)
+  - [Source Tenant - API Configuration (Multi-Tenant)](#source-tenant---api-configuration-multi-tenant)
   - [Certificate Management](#certificate-management)
   - [Azure Web App Setup](#azure-web-app-setup)
 - [Deployment](#deployment)
@@ -169,6 +170,35 @@ Configure separate applications for source and destination tenants with these **
 | `DeviceManagementServicesConfig.ReadWrite.All` | Application | Autopilot registration and device deletion |
 | `User.Read.All` | Application | Read user attributes from Entra ID |
 | `DeviceManagementManagedDevices.PrivilegedOperations.All` | Application | Perform remote wipe operations (only required when remote wipe is turned on in the Settings.xml of the Client) |
+
+#### Source Tenant - API Configuration (Multi-Tenant)
+The Web API supports migrating devices from multiple source Intune tenants into a single destination tenant. This routing is handled dynamically using **Microsoft Entra ID App Roles**.
+
+When a user logs into the Client App, their assigned App Role (e.g., `Migrator.TenantA`) is sent to the API via their authentication token. The API uses this role to select the correct source tenant credentials and custom migration behavior from `appsettings.json`.
+
+Example `appsettings.json` backend structure:
+```json
+{
+  "IntuneSourceTenants": {
+    "Migrator.TenantA": {
+      "AzureAd": {
+        "TenantId": "tenant-A-guid",
+        "ClientId": "tenant-A-app-client-id",
+        "ClientSecret": "tenant-A-app-client-secret"
+      },
+      "Migration": {
+        "DevicesRequestTimeout": 0,
+        "SourceTenantDeviceMustExists": false,
+        "DeviceRegistrationRemoval": true,
+        "DeviceRemoval": false,
+        "GroupTag": "MigrateGroupTag"
+      }
+    }
+  }
+}
+```
+
+*Note: If no valid App Role is found, the API will attempt to fall back to the legacy `IntuneSourceTenantConfig` definition.*
 
 ### Certificate Management
 

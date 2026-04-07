@@ -21,7 +21,7 @@ namespace intuneMigratorApi.Controllers;
 [RequiredScope(RequiredScopesConfigurationKey = "AzureAd:Scopes")]
 public class MigrateController : ControllerBase
 {
-    private readonly GraphServiceClient _graphServiceClientSource;
+    private readonly SourceTenantClientFactory _sourceTenantFactory;
     private readonly GraphServiceClient _graphServiceClientDestination;
     private readonly ILogger<MigrateController> _logger;
     private readonly IMemoryCache _memoryCache;
@@ -29,14 +29,14 @@ public class MigrateController : ControllerBase
     private readonly IntuneMigratorDBContext _dbContext;
 
     public MigrateController(
-        [FromKeyedServices("Source")] GraphServiceClient graphServiceClientSource,
+        SourceTenantClientFactory sourceTenantFactory,
         [FromKeyedServices("Destination")] GraphServiceClient graphServiceClientDestination,
         ILogger<MigrateController> logger,
         IMemoryCache memoryCache,
         IConfiguration configuration,
         IntuneMigratorDBContext dbContext)
     {
-        _graphServiceClientSource = graphServiceClientSource;
+        _sourceTenantFactory = sourceTenantFactory;
         _graphServiceClientDestination = graphServiceClientDestination;
         _logger = logger;
         _memoryCache = memoryCache;
@@ -58,7 +58,17 @@ public class MigrateController : ControllerBase
             return Unauthorized(new { Message = "User identity could not be determined." });
         }
 
-        var timeoutSeconds = _configuration.GetSection("Migration").GetValue<int?>("DevicesRequestTimeout");
+        var tenantContext = _sourceTenantFactory.GetTenantContext(User);
+        if (tenantContext == null)
+        {
+            return Unauthorized(new { Message = "No valid source tenant configuration found for the authenticated user's role." });
+        }
+
+        var _graphServiceClientSource = tenantContext.GraphClient;
+        var migrationConfig = tenantContext.TenantConfig.GetSection("Migration");
+        if (!migrationConfig.Exists()) migrationConfig = _configuration.GetSection("Migration"); // Fallback
+
+        var timeoutSeconds = migrationConfig.GetValue<int?>("DevicesRequestTimeout");
         
         if (timeoutSeconds.HasValue && timeoutSeconds.Value > 0)
         {
@@ -78,7 +88,7 @@ public class MigrateController : ControllerBase
         _logger.LogInformation("Received migration request for Device: {DeviceName}, Serial: {SerialNumber}", request.DeviceName, request.SerialNumber);
 
         var migrationId = Guid.NewGuid();
-        var groupTag = _configuration.GetSection("Migration").GetValue<string>("GroupTag") ?? String.Empty;
+        var groupTag = migrationConfig.GetValue<string>("GroupTag") ?? String.Empty;
 
         async Task LogStatus(MigrationStatus status, string message)
         {
@@ -101,13 +111,13 @@ public class MigrateController : ControllerBase
 
         try
         {
-            var mustDeviceExistInSource = _configuration.GetSection("Migration").GetValue<bool>("SourceTenantDeviceMustExists");
+            var mustDeviceExistInSource = migrationConfig.GetValue<bool>("SourceTenantDeviceMustExists");
             _logger.LogDebug("SourceTenantDeviceMustExists setting: {Value}", mustDeviceExistInSource);
 
-            var shouldRemoveDeviceRegistration = _configuration.GetSection("Migration").GetValue<bool>("DeviceRegistrationRemoval");
+            var shouldRemoveDeviceRegistration = migrationConfig.GetValue<bool>("DeviceRegistrationRemoval");
             _logger.LogDebug("DeviceRegistrationRemoval setting: {Value}", shouldRemoveDeviceRegistration);
 
-            var shouldRemoveDevice = _configuration.GetSection("Migration").GetValue<bool>("DeviceRemoval");
+            var shouldRemoveDevice = migrationConfig.GetValue<bool>("DeviceRemoval");
             _logger.LogDebug("DeviceRemoval setting: {Value}", shouldRemoveDevice);
 
             var existingDevice = await DeviceManagementService.GetDeviceAsync(_graphServiceClientSource, serialNumber: request.SerialNumber, deviceName: request.DeviceName, logger: _logger);
@@ -245,7 +255,17 @@ public class MigrateController : ControllerBase
                 return Unauthorized(new { Message = "User identity could not be determined." });
             }
 
-            var mustDeviceExistInSource = _configuration.GetSection("Migration").GetValue<bool>("SourceTenantDeviceMustExists");
+            var tenantContext = _sourceTenantFactory.GetTenantContext(User);
+            if (tenantContext == null)
+            {
+                return Unauthorized(new { Message = "No valid source tenant configuration found for the authenticated user's role." });
+            }
+
+            var _graphServiceClientSource = tenantContext.GraphClient;
+            var migrationConfig = tenantContext.TenantConfig.GetSection("Migration");
+            if (!migrationConfig.Exists()) migrationConfig = _configuration.GetSection("Migration"); // Fallback
+
+            var mustDeviceExistInSource = migrationConfig.GetValue<bool>("SourceTenantDeviceMustExists");
             _logger.LogDebug("SourceTenantDeviceMustExists setting: {Value}", mustDeviceExistInSource);
 
             _logger.LogInformation("Checking device existence for Device: {DeviceName}, Serial: {SerialNumber}", request.DeviceName, request.SerialNumber);
