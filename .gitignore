@@ -5,6 +5,7 @@ Client/bin/
 Client/obj/
 Service/bin/
 Service/obj/
+publish
 
 # user specific
 *.user

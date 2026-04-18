@@ -20,5 +20,7 @@
   <LogoPath>Assets/intuneMigration.png</LogoPath>
   <!-- WipeDevice values can be false, local or remotelocal -->
   <WipeDevice>local</WipeDevice>
+  <!-- MsalLogLevel controls the verbosity of MSAL logs. Options: Verbose, Info, Warning, Error. Default is Warning. -->
+  <MsalLogLevel>Warning</MsalLogLevel>
   <Debug>false</Debug>
 </Configuration>

@@ -14,7 +14,7 @@ public class AuthService
     private readonly IPublicClientApplication _pca;
     private readonly string[] _scopes;
 
-    public AuthService(string clientId, string tenantId, string scopes, string redirectUri, string? spaOrigin = null)
+    public AuthService(string clientId, string tenantId, string scopes, string redirectUri, string? spaOrigin = null, Microsoft.Identity.Client.LogLevel msalLogLevel = Microsoft.Identity.Client.LogLevel.Warning)
     {
         _scopes = scopes.Split(new[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries);
         
@@ -28,6 +28,23 @@ public class AuthService
             .WithAuthority(AzureCloudInstance.AzurePublic, tenantId)
             .WithRedirectUri(redirectUri)
             .WithHttpClientFactory(new SpaHttpClientFactory(origin))
+                .WithLogging((level, message, containsPii) =>
+                {
+                    // MSAL messages have a very long prefix (Version, OS, Correlation ID). Strip it for readability.
+                    var cleanMessage = message;
+                    var lastBracketIndex = message.IndexOf("] ");
+                    if (lastBracketIndex > -1 && message.Length > lastBracketIndex + 2)
+                    {
+                        cleanMessage = message.Substring(lastBracketIndex + 2);
+                    }
+
+                    // Filter out known noisy Info messages
+                    if (level == Microsoft.Identity.Client.LogLevel.Info && cleanMessage.Contains("[Region discovery]")) return;
+
+                    if (level == Microsoft.Identity.Client.LogLevel.Error) LogService.Error($"MSAL: {cleanMessage}");
+                    else if (level == Microsoft.Identity.Client.LogLevel.Warning) LogService.Warning($"MSAL: {cleanMessage}");
+                    else LogService.Info($"MSAL: {cleanMessage}");
+                }, msalLogLevel, enablePiiLogging: false)
             .Build();
     }
 

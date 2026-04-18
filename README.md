@@ -281,12 +281,16 @@ dotnet publish Api/intuneMigratorApi.csproj -c Release -r win-x64 --self-contain
 ```bash
 # Self-contained Windows x64 deployment
 dotnet publish Client/intuneMigratorClient.csproj -c Release -r win-x64 --self-contained true -o ./publish/client
+# Windows x64 deployment
+dotnet publish Client/intuneMigratorClient.csproj -c Release -r win-x64 -o ./publish/client
 ```
 
 ### Publish Service
 ```bash
 # Self-contained Windows x64 deployment
 dotnet publish Service/intuneMigratorService.csproj -c Release -r win-x64 --self-contained true -o ./publish/service
+# Windows x64 deployment
+dotnet publish Service/intuneMigratorService.csproj -c Release -r win-x64 -o ./publish/service
 ```
 
 ### Using Build Tasks

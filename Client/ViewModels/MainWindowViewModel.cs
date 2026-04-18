@@ -17,6 +17,7 @@ using System.Xml.Linq;
 using intuneMigratorClient.Services;
 using System.Text.Json;
 using Microsoft.Identity.Client;
+using LogLevel = Microsoft.Identity.Client.LogLevel;
 
 namespace intuneMigratorClient.ViewModels;
 
@@ -153,7 +154,16 @@ public partial class MainWindowViewModel : ViewModelBase
 
         var spaOrigin = doc.Root?.Element("SpaOrigin")?.Value;
 
-        _authService = new AuthService(clientId, tenantId, scopes, redirectUri, spaOrigin);
+        var msalLogLevelStr = doc.Root?.Element("MsalLogLevel")?.Value ?? "Warning";
+        if (!Enum.TryParse<LogLevel>(msalLogLevelStr, true, out var msalLogLevel))
+        {
+            msalLogLevel = LogLevel.Warning;
+            LogService.Warning($"Invalid MsalLogLevel '{msalLogLevelStr}' in Settings.xml. Defaulting to 'Warning'.");
+        }
+
+        LogService.Info("Logging level for MSAL set to: " + msalLogLevel);
+
+        _authService = new AuthService(clientId, tenantId, scopes, redirectUri, spaOrigin, msalLogLevel);
 
         var baseUrl = "https://localhost:7123";
         var ignoreSslErrors = false;
@@ -327,7 +337,7 @@ public partial class MainWindowViewModel : ViewModelBase
             else
             {
                 LogService.Warning("Login failed. No authentication result received.");
-                StatusMessage = "Login failed.";
+                StatusMessage = "Login failed. No authentication result received.";
             }
         }
         catch (OperationCanceledException)
