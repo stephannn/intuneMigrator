@@ -2,6 +2,7 @@
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Input.Platform;
 using System.Linq;
 using System.Net.Http;
 using Avalonia.Threading;
@@ -641,7 +642,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         try
         {
-            if (File.Exists(_wipeFlagFile)) File.Delete(_wipeFlagFile);
+            //if (File.Exists(_wipeFlagFile)) File.Delete(_wipeFlagFile); // Delete wipe file when clicked on button
             IsWipeButtonEnabled = false;
 
             if (!IsDebug)
