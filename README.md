@@ -271,7 +271,7 @@ dotnet intuneMigratorApi.dll
 ### Publish API
 ```bash
 # Linux .NET deployment
-dotnet publish Api/intuneMigratorApi.csproj -c Release
+dotnet publish Api/intuneMigratorApi.csproj -c Release -o ./publish/api
 
 # Self-contained Windows x64 deployment
 dotnet publish Api/intuneMigratorApi.csproj -c Release -r win-x64 --self-contained true -o ./publish/api

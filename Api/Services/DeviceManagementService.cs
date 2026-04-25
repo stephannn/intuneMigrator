@@ -4,6 +4,8 @@ using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Net.Http;
+using System.Text.Json;
 using intuneMigratorApi.Models;
 
 namespace intuneMigratorApi.Services;
@@ -49,11 +51,13 @@ public static class DeviceManagementService
             
             return result; */
 
+            /*
             var page = await graphServiceClient
                 .DeviceManagement
                 .WindowsAutopilotDeviceIdentities
                 .Request()
-                .Top(200)
+                .Select("id,serialNumber,displayName,managedDeviceId")
+                .Top(500)
                 .GetAsync();
 
             WindowsAutopilotDeviceIdentity? result = null;
@@ -86,6 +90,55 @@ public static class DeviceManagementService
             }
 
             return result;
+            */
+
+            // Using a raw HTTP request with a server-side filter
+            string filterQuery = !string.IsNullOrEmpty(serialNumber) 
+                ? $"contains(serialNumber,'{serialNumber}')" 
+                : $"contains(displayName,'{deviceName}')";
+
+            var requestUrl = $"https://graph.microsoft.com/v1.0/deviceManagement/windowsAutopilotDeviceIdentities?$filter={filterQuery}&$select=id,serialNumber,displayName,managedDeviceId";
+            
+            while (!string.IsNullOrEmpty(requestUrl))
+            {
+                var httpRequest = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+                
+                // Let the Graph SDK append the Authorization Bearer token to our raw request
+                await graphServiceClient.AuthenticationProvider.AuthenticateRequestAsync(httpRequest);
+                
+                var response = await graphServiceClient.HttpProvider.SendAsync(httpRequest);
+                response.EnsureSuccessStatusCode();
+
+                var jsonString = await response.Content.ReadAsStringAsync();
+                using var jsonDoc = JsonDocument.Parse(jsonString);
+
+                if (jsonDoc.RootElement.TryGetProperty("value", out var valueArray))
+                {
+                    foreach (var element in valueArray.EnumerateArray())
+                    {
+                        var sn = element.TryGetProperty("serialNumber", out var snProp) ? snProp.GetString() : null;
+                        var dn = element.TryGetProperty("displayName", out var dnProp) ? dnProp.GetString() : null;
+
+                        bool isMatch = (!string.IsNullOrEmpty(serialNumber) && string.Equals(sn, serialNumber, StringComparison.OrdinalIgnoreCase)) ||
+                                       (string.IsNullOrEmpty(serialNumber) && !string.IsNullOrEmpty(deviceName) && string.Equals(dn, deviceName, StringComparison.OrdinalIgnoreCase));
+
+                        if (isMatch)
+                        {
+                            return new WindowsAutopilotDeviceIdentity
+                            {
+                                Id = element.TryGetProperty("id", out var idProp) ? idProp.GetString() : null,
+                                SerialNumber = sn,
+                                DisplayName = dn,
+                                ManagedDeviceId = element.TryGetProperty("managedDeviceId", out var mdIdProp) ? mdIdProp.GetString() : null
+                            };
+                        }
+                    }
+                }
+
+                requestUrl = jsonDoc.RootElement.TryGetProperty("@odata.nextLink", out var nextLinkProp) ? nextLinkProp.GetString() : null;
+            }
+            
+            return null;
         }
         catch (ServiceException ex)
         {
