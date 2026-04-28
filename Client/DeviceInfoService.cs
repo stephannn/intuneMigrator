@@ -37,6 +37,11 @@ public class DeviceInfoService
         return await SendCommandAsync("WIPE_DEVICE") ?? "UNKNOWN";
     }
 
+    public async Task<string> WipeCloudDeviceAsync()
+    {
+        return await SendCommandAsync("WIPE_CLOUD_DEVICE") ?? "UNKNOWN";
+    }
+
     private async Task<string?> SendCommandAsync(string command)
     {
         //if (!OperatingSystem.IsWindows()) return "UNSUPPORTED_PLATFORM";

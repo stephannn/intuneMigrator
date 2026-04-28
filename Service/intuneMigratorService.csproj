@@ -4,6 +4,14 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <Company>SH</Company>
+    <Product>Intune Migrator Service</Product>
+    <Description>This is the service application for the Intune Migrator.</Description>
+    <Copyright>Copyright © 2026 SH</Copyright>
   </PropertyGroup>
 
   <ItemGroup>

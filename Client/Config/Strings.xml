@@ -47,6 +47,9 @@
   <ButtonWipeDevice Language="en">Wipe Device</ButtonWipeDevice>
   <ButtonWipeDevice Language="de">Gerät zurücksetzen</ButtonWipeDevice>
 
+  <ButtonWipeDeviceCloud Language="en">Wipe Cloud</ButtonWipeDeviceCloud>
+  <ButtonWipeDeviceCloud Language="de">Gerät über Cloud zurücksetzen</ButtonWipeDeviceCloud>
+
   <CheckboxBackup Language="en">I confirm that I have backed up my data</CheckboxBackup>
   <CheckboxBackup Language="de">Ich bestätige, dass ich meine Daten gesichert habe</CheckboxBackup>
 
@@ -64,4 +67,13 @@
 
   <DeviceCodeCopyTooltip Language="en">Click to copy code</DeviceCodeCopyTooltip>
   <DeviceCodeCopyTooltip Language="de">Klicken zum Kopieren</DeviceCodeCopyTooltip>
+
+  <WipeConfirmationMessage Language="en">Are you sure you want to wipe this device? All data will be permanently deleted.</WipeConfirmationMessage>
+  <WipeConfirmationMessage Language="de">Sind Sie sicher, dass Sie dieses Gerät zurücksetzen möchten? Alle Daten werden unwiderruflich gelöscht.</WipeConfirmationMessage>
+
+  <ButtonYesWipe Language="en">Yes, Wipe</ButtonYesWipe>
+  <ButtonYesWipe Language="de">Ja, zurücksetzen</ButtonYesWipe>
+
+  <ButtonCancelWipe Language="en">Cancel</ButtonCancelWipe>
+  <ButtonCancelWipe Language="de">Abbrechen</ButtonCancelWipe>
 </Strings>

@@ -1,4 +1,4 @@
-﻿﻿using Avalonia;
+﻿﻿﻿﻿using Avalonia;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -86,7 +86,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private bool _isHashRetrievalFailed;
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(WipeDeviceCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ExecuteWipeCommand))]
     private bool _isWipeButtonEnabled;
 
     [ObservableProperty] private string _buttonLoginText = "Login to New Tenant";
@@ -95,7 +95,8 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private string _checkboxWipeDeviceText = "Wipe my device after migration (Factory Reset)";
     [ObservableProperty] private string _buttonCheckMigrationText = "Check Migration";
     [ObservableProperty] private string _buttonStartMigrationText = "Start Migration";
-    [ObservableProperty] private string _buttonWipeDeviceText = "Wipe Device";
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CurrentWipeButtonText))] private string _buttonWipeDeviceText = "Wipe Device";
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CurrentWipeButtonText))] private string _buttonWipeDeviceCloudText = "Wipe Cloud";
     [ObservableProperty] private string _buttonRetryHashText = "Retry Hash Retrieval";
     [ObservableProperty] private string _buttonCancelText = "Cancel";
     [ObservableProperty] private string _buttonDebugText = "Debug Service";
@@ -113,6 +114,18 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     private bool _showDeviceCodePrompt;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CurrentWipeButtonText))]
+    private bool _isCloudWipeSelected;
+
+    [ObservableProperty] private string _wipeConfirmationMessageText = "Are you sure you want to wipe this device? All data will be permanently deleted.";
+    [ObservableProperty] private string _buttonYesText = "Yes, Wipe";
+    [ObservableProperty] private string _buttonNoText = "Cancel";
+
+    [ObservableProperty] private bool _isWipeConfirmationVisible;
+
+    public string CurrentWipeButtonText => IsCloudWipeSelected ? ButtonWipeDeviceCloudText : ButtonWipeDeviceText;
 
     partial void OnIsNightModeChanged(bool value)
     {
@@ -634,7 +647,38 @@ public partial class MainWindowViewModel : ViewModelBase
         IsBusy = false;
     }
 
+    [RelayCommand]
+    private void SelectWipeMode(string mode)
+    {
+        IsCloudWipeSelected = mode == "Cloud";
+    }
+
     [RelayCommand(CanExecute = nameof(IsWipeButtonEnabled))]
+    private void ExecuteWipe()
+    {
+        IsWipeConfirmationVisible = true;
+    }
+
+    [RelayCommand]
+    private void CancelWipe()
+    {
+        IsWipeConfirmationVisible = false;
+    }
+
+    [RelayCommand]
+    private async Task ConfirmWipe()
+    {
+        IsWipeConfirmationVisible = false;
+        if (IsCloudWipeSelected)
+        {
+            await WipeDeviceCloud();
+        }
+        else
+        {
+            await WipeDevice();
+        }
+    }
+
     private async Task WipeDevice()
     {
         StatusMessage = "Wiping device...";
@@ -661,6 +705,42 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             StatusMessage = $"Error wiping device: {ex.Message}";
             LogService.Error(StatusMessage);
+            IsWipeButtonEnabled = true;
+        }
+    }
+
+    private async Task WipeDeviceCloud()
+    {
+        StatusMessage = "Opening Windows Recovery Settings...";
+        LogService.Info(StatusMessage);
+
+        try
+        {
+            IsWipeButtonEnabled = false;
+
+            if (!IsDebug)
+            {
+                StatusMessage = "Please proceed with the device reset in the Settings app. Admin privileges are required.";
+                LogService.Info(StatusMessage);
+                
+                if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("ms-settings:recovery") { UseShellExecute = true });
+                }
+            }
+            else
+            {
+                StatusMessage = "DEBUG: Cloud device wipe simulated (ms-settings:recovery).";
+                LogService.Info(StatusMessage);
+            }
+
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error opening recovery settings: {ex.Message}";
+            LogService.Error(StatusMessage);
+            IsWipeButtonEnabled = true;
         }
     }
 
@@ -791,10 +871,14 @@ public partial class MainWindowViewModel : ViewModelBase
                 t = GetString("CheckboxBackup"); if (!string.IsNullOrEmpty(t)) CheckboxBackupText = t;
                 t = GetString("CheckboxWipeDevice"); if (!string.IsNullOrEmpty(t)) CheckboxWipeDeviceText = t;
                 t = GetString("ButtonWipeDevice"); if (!string.IsNullOrEmpty(t)) ButtonWipeDeviceText = t;
+                t = GetString("ButtonWipeDeviceCloud"); if (!string.IsNullOrEmpty(t)) ButtonWipeDeviceCloudText = t;
                 t = GetString("DeviceCodeActionRequired"); if (!string.IsNullOrEmpty(t)) DeviceCodeActionRequiredText = t;
                 t = GetString("DeviceCodeStep1"); if (!string.IsNullOrEmpty(t)) DeviceCodeStep1Text = t;
                 t = GetString("DeviceCodeStep2"); if (!string.IsNullOrEmpty(t)) DeviceCodeStep2Text = t;
                 t = GetString("DeviceCodeCopyTooltip"); if (!string.IsNullOrEmpty(t)) DeviceCodeCopyTooltipText = t;
+                t = GetString("WipeConfirmationMessage"); if (!string.IsNullOrEmpty(t)) WipeConfirmationMessageText = t;
+                t = GetString("ButtonYesWipe"); if (!string.IsNullOrEmpty(t)) ButtonYesText = t;
+                t = GetString("ButtonCancelWipe"); if (!string.IsNullOrEmpty(t)) ButtonNoText = t;
             }
         }
         catch (Exception ex)

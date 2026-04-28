@@ -6,7 +6,6 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.AccessControl;
 using System.Security.Principal;
-using Microsoft.Extensions.Configuration;
 
 namespace intuneMigratorService;
 
@@ -103,6 +102,15 @@ public class Worker : BackgroundService
                     {
                         await Task.Delay(1000);
                         WipeDevice();
+                    });
+                }
+                else if (command == "WIPE_CLOUD_DEVICE")
+                {
+                    response = "OK";
+                    _ = Task.Run(async () => 
+                    {
+                        await Task.Delay(1000);
+                        WipeDevice("doWipeCloudMethod");
                     });
                 }
 
@@ -229,7 +237,7 @@ public class Worker : BackgroundService
         catch { return null; }
     }
 
-    private void WipeDevice()
+    private void WipeDevice(string methodName = "doWipeMethod")
     {
         if (OperatingSystem.IsLinux())
         {
@@ -240,29 +248,23 @@ public class Worker : BackgroundService
         {
             try
             {
-                _logger.LogInformation("Initiating Device Wipe...");
+                _logger.LogInformation("Initiating Device Wipe using WMI method: '{MethodName}'...", methodName);
                 using var searcher = new ManagementObjectSearcher(@"root\cimv2\mdm\dmmap", "SELECT * FROM MDM_RemoteWipe");
                 using var collection = searcher.Get();
                 var obj = collection.Cast<ManagementObject>().FirstOrDefault();
                 if (obj != null)
                 {
-                    var inputParams = obj.GetMethodParameters("doWipeMethod");
-                    inputParams["param"] = "";
-                    obj.InvokeMethod("doWipeMethod", inputParams, null);
+                    ManagementBaseObject? inputParams = null;
+                    // Try to get parameters (most Wipe methods don't require them, but we do this safely)
+                    try { inputParams = obj.GetMethodParameters(methodName); } catch { }
+                    
+                    obj.InvokeMethod(methodName, inputParams, null);
                 }
                 else throw new Exception("MDM_RemoteWipe instance not found.");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Wipe via WMI failed. Trying systemreset.exe.");
-                try
-                {
-                    Process.Start(Path.Combine(Environment.SystemDirectory, "systemreset.exe"), "-factoryreset");
-                }
-                catch (Exception ex2)
-                {
-                    _logger.LogError(ex2, "Wipe via systemreset.exe failed.");
-                }
+                _logger.LogError(ex, "Wipe via WMI failed. No fallback available as systemreset.exe is not present.");
             }
         }
     }

@@ -92,12 +92,16 @@ public static class DeviceManagementService
             return result;
             */
 
-            // Using a raw HTTP request with a server-side filter
-            string filterQuery = !string.IsNullOrEmpty(serialNumber) 
-                ? $"contains(serialNumber,'{serialNumber}')" 
-                : $"contains(displayName,'{deviceName}')";
+            // _ is an invalid character in both serial number and device name, we can use it as a delimiter to split and get the clean serial number or device name for filtering.
+            string? cleanSerialNumber = string.IsNullOrEmpty(serialNumber) ? null : serialNumber.Trim().Split('_')[0];
+            string? cleanDeviceName = string.IsNullOrEmpty(deviceName) ? null : deviceName.Trim().Split('_')[0];
 
-            var requestUrl = $"https://graph.microsoft.com/v1.0/deviceManagement/windowsAutopilotDeviceIdentities?$filter={filterQuery}&$select=id,serialNumber,displayName,managedDeviceId";
+            // Using a raw HTTP request with a server-side filter
+            string filterQuery = !string.IsNullOrEmpty(cleanSerialNumber) 
+                ? $"contains(serialNumber,'{cleanSerialNumber}')" 
+                : $"contains(displayName,'{cleanDeviceName}')";
+
+            var requestUrl = $"https://graph.microsoft.com/beta/deviceManagement/windowsAutopilotDeviceIdentities?$filter={filterQuery}&$top=25";
             
             while (!string.IsNullOrEmpty(requestUrl))
             {

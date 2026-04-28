@@ -59,12 +59,19 @@
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Center"/>
 
-            <Button Content="{Binding ButtonWipeDeviceText}" 
-                    Command="{Binding WipeDeviceCommand}" 
-                    HorizontalAlignment="Stretch"
-                    HorizontalContentAlignment="Center"
-                    IsEnabled="{Binding IsWipeButtonEnabled}"
-                    IsVisible="{Binding IsWipeOptionVisible}"/>
+            <SplitButton Content="{Binding CurrentWipeButtonText}" 
+                         Command="{Binding ExecuteWipeCommand}" 
+                         HorizontalAlignment="Stretch"
+                         HorizontalContentAlignment="Center"
+                         IsEnabled="{Binding IsWipeButtonEnabled}"
+                         IsVisible="{Binding IsWipeOptionVisible}">
+                <SplitButton.Flyout>
+                    <MenuFlyout>
+                        <MenuItem Header="{Binding ButtonWipeDeviceText}" Command="{Binding SelectWipeModeCommand}" CommandParameter="Local" />
+                        <MenuItem Header="{Binding ButtonWipeDeviceCloudText}" Command="{Binding SelectWipeModeCommand}" CommandParameter="Cloud" />
+                    </MenuFlyout>
+                </SplitButton.Flyout>
+            </SplitButton>
 
             <Button Content="{Binding ButtonRetryHashText}" 
                     Command="{Binding RetrieveHashCommand}" 
@@ -131,6 +138,26 @@
                 <TextBlock Text="Night Mode" VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <ToggleSwitch IsChecked="{Binding IsNightMode}" OnContent="" OffContent=""/>
             </StackPanel>
+        </Grid>
+
+        <!-- Wipe Confirmation Overlay -->
+        <Grid Grid.Column="0" Grid.ColumnSpan="2" Background="#C0000000" IsVisible="{Binding IsWipeConfirmationVisible}" Margin="-20">
+            <Border Background="{DynamicResource SystemRegionBrush}" 
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" 
+                    BorderThickness="1" 
+                    CornerRadius="8" 
+                    Padding="20" 
+                    HorizontalAlignment="Center" 
+                    VerticalAlignment="Center" 
+                    MaxWidth="440">
+                <StackPanel Spacing="15">
+                    <TextBlock Text="{Binding WipeConfirmationMessageText}" TextWrapping="Wrap" FontSize="16" FontWeight="SemiBold" TextAlignment="Center"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="15" Margin="0,10,0,0">
+                        <Button Content="{Binding ButtonNoText}" Command="{Binding CancelWipeCommand}" Width="150" HorizontalContentAlignment="Center"/>
+                        <Button Content="{Binding ButtonYesText}" Command="{Binding ConfirmWipeCommand}" Width="150" HorizontalContentAlignment="Center" Background="#d13438" Foreground="White" FontWeight="Bold"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
         </Grid>
     </Grid>
 
