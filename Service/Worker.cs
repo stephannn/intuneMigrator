@@ -158,7 +158,16 @@ public class Worker : BackgroundService
                 // Requires root
                 return File.ReadAllText("/sys/class/dmi/id/product_serial").Trim();
             }
-            catch { return "UNKNOWN"; }
+            catch (UnauthorizedAccessException)
+            {
+                _logger.LogWarning("Access denied when reading serial number on Linux. Elevated permissions may be required.");
+                return "ACCESS_DENIED";
+            }
+            catch (Exception ex) { 
+                _logger.LogError(ex, "Error reading serial number on Linux. File may not exist or be accessible.");
+                _logger.LogError(ex, "Exception details: " + ex.ToString());
+                return "UNKNOWN"; 
+            }
         }
 
         if (OperatingSystem.IsWindows()) {

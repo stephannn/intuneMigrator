@@ -15,7 +15,7 @@ public static class DeviceManagementService
     /// <summary>
     /// Search for a device if exists, shall return the device.
     /// </summary>
-    public static async Task<WindowsAutopilotDeviceIdentity?> GetDeviceAsync(GraphServiceClient graphServiceClient, string ?serialNumber = null, string ?deviceName = null, ILogger? logger = null)
+    public static async Task<WindowsAutopilotDeviceIdentity?> GetDeviceRegistrationAsync(GraphServiceClient graphServiceClient, string ?serialNumber = null, string ?deviceName = null, ILogger? logger = null)
     {
 
         try
@@ -163,7 +163,7 @@ public static class DeviceManagementService
         }
 
         if (serialNumber == null && deviceName != null){
-            var device = await GetDeviceAsync(graphServiceClient, deviceName: deviceName, logger: logger);
+            var device = await GetDeviceRegistrationAsync(graphServiceClient, deviceName: deviceName, logger: logger);
             serialNumber = device?.Id;
         }
 
@@ -230,6 +230,55 @@ public static class DeviceManagementService
     }
 
     /// <summary>
+    /// Add a new device by the corporate identifier (manufacturer, model, serial number)
+    /// </summary>
+    public static async Task<bool> AddDeviceByCorporateIdentifierAsync(GraphServiceClient graphServiceClient, DeviceCorporateIdentityModel deviceIdentity, ILogger? logger = null, bool debug = false)
+    {
+        if (debug)
+        {
+            logger?.LogInformation("Debug: Simulating AddDeviceByCorporateAsync for device: {manufacturer} {model} {serialNumber}", deviceIdentity.manufacturer, deviceIdentity.model, deviceIdentity.serialNumber);
+            return true;
+        }
+
+        var requestUrl = "https://graph.microsoft.com/beta/deviceManagement/importedDeviceIdentities/importDeviceIdentityList";
+
+        var payload = new
+        {
+            overwriteImportedDeviceIdentities = false,
+            importedDeviceIdentities = new[]
+            {
+                new
+                {
+                    importedDeviceIdentityType = "manufacturerModelSerial",
+                    importedDeviceIdentifier = $"{deviceIdentity.manufacturer.Trim()},{deviceIdentity.model.Trim()},{deviceIdentity.serialNumber.Trim()}"
+                }
+            }
+        };
+
+        try
+        {
+            var jsonPayload = JsonSerializer.Serialize(payload);
+            var httpRequest = new HttpRequestMessage(HttpMethod.Post, requestUrl)
+            {
+                Content = new StringContent(jsonPayload, Encoding.UTF8, "application/json")
+            };
+
+            await graphServiceClient.AuthenticationProvider.AuthenticateRequestAsync(httpRequest);
+
+            var response = await graphServiceClient.HttpProvider.SendAsync(httpRequest);
+            response.EnsureSuccessStatusCode();
+
+            logger?.LogInformation("Successfully added device by corporate identifier: {manufacturer},{model},{serialNumber}", deviceIdentity.manufacturer, deviceIdentity.model, deviceIdentity.serialNumber);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            logger?.LogError(ex, "Error adding device: {SerialNumber}", deviceIdentity?.serialNumber);
+            throw;
+        }
+    }
+
+    /// <summary>
     /// Wipes a device associated with the given serial number.
     /// </summary>
     public static async Task<bool> WipeDeviceAsync(GraphServiceClient graphServiceClient, string serialNumber, ILogger? logger = null, bool debug = false)
@@ -240,7 +289,7 @@ public static class DeviceManagementService
             return true;
         }
 
-        var deviceIdentity = await GetDeviceAsync(graphServiceClient, serialNumber, logger: logger);
+        var deviceIdentity = await GetDeviceRegistrationAsync(graphServiceClient, serialNumber, logger: logger);
 
         if (deviceIdentity == null)
         {
@@ -288,7 +337,7 @@ public static class DeviceManagementService
             return true;
         }
         
-        var deviceIdentity = await GetDeviceAsync(graphServiceClient, serialNumber, logger: logger);
+        var deviceIdentity = await GetDeviceRegistrationAsync(graphServiceClient, serialNumber, logger: logger);
 
         if (deviceIdentity == null)
         {

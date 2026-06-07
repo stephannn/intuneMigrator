@@ -1,5 +1,3 @@
-
-
 namespace intuneMigratorApi.Models;
 
 public class DeviceIdentityModel

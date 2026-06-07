@@ -402,6 +402,8 @@ public partial class MainWindowViewModel : ViewModelBase
         StatusMessage = "Gathering device info...";
         LogService.Info(StatusMessage);
         
+        var manufacturer = await _deviceService.GetManufacturerAsync();
+        var model = await _deviceService.GetModelAsync();
         var serial = await _deviceService.GetSerialNumberAsync();
         var hostname = await _deviceService.GetHostnameAsync();
         var hash = await _deviceService.GetHardwareHashAsync();
@@ -412,6 +414,8 @@ public partial class MainWindowViewModel : ViewModelBase
             try
             {
                 var doc = XDocument.Load(testDevicePath);
+                manufacturer = doc.Root?.Elements().FirstOrDefault(e => string.Equals(e.Name.LocalName, "manufacturer", StringComparison.OrdinalIgnoreCase))?.Value;
+                model = doc.Root?.Elements().FirstOrDefault(e => string.Equals(e.Name.LocalName, "model", StringComparison.OrdinalIgnoreCase))?.Value;
                 serial = doc.Root?.Elements().FirstOrDefault(e => string.Equals(e.Name.LocalName, "serial", StringComparison.OrdinalIgnoreCase))?.Value;
                 hostname = doc.Root?.Elements().FirstOrDefault(e => string.Equals(e.Name.LocalName, "hostname", StringComparison.OrdinalIgnoreCase))?.Value;
                 hash = doc.Root?.Elements().FirstOrDefault(e => string.Equals(e.Name.LocalName, "hash", StringComparison.OrdinalIgnoreCase))?.Value;
@@ -455,7 +459,7 @@ public partial class MainWindowViewModel : ViewModelBase
             bool performRemoteWipe = IsWipeDevice && (_wipeMode.Contains("remote"));
             bool performLocalWipe = IsWipeDevice && (_wipeMode.Contains("local"));
 
-            var payload = new { SerialNumber = serial, DeviceName = hostname, HardwareHash = hash, WipeDevice = performRemoteWipe, Debug = IsDebug };
+            var payload = new { Manufacturer = manufacturer, Model = model, SerialNumber = serial, DeviceName = hostname, HardwareHash = hash, WipeDevice = performRemoteWipe, Debug = IsDebug };
 
             var response = await _httpClient.PostAsJsonAsync(_apiEndpointMigration, payload);
             
@@ -534,6 +538,8 @@ public partial class MainWindowViewModel : ViewModelBase
         LogService.Info(StatusMessage);
         
         LogService.Info("Retrieving serial number and hostname for migration check...");
+        var manufacturer = await _deviceService.GetManufacturerAsync();
+        var model = await _deviceService.GetModelAsync();
         var serial = await _deviceService.GetSerialNumberAsync();
         var hostname = await _deviceService.GetHostnameAsync();
 
@@ -543,6 +549,8 @@ public partial class MainWindowViewModel : ViewModelBase
             try
             {
                 var doc = XDocument.Load(testDevicePath);
+                manufacturer = doc.Root?.Elements().FirstOrDefault(e => string.Equals(e.Name.LocalName, "manufacturer", StringComparison.OrdinalIgnoreCase))?.Value;
+                model = doc.Root?.Elements().FirstOrDefault(e => string.Equals(e.Name.LocalName, "model", StringComparison.OrdinalIgnoreCase))?.Value;
                 serial = doc.Root?.Elements().FirstOrDefault(e => string.Equals(e.Name.LocalName, "serial", StringComparison.OrdinalIgnoreCase))?.Value;
                 hostname = doc.Root?.Elements().FirstOrDefault(e => string.Equals(e.Name.LocalName, "hostname", StringComparison.OrdinalIgnoreCase))?.Value;
 
@@ -568,7 +576,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         try
         {
-            var payload = new { SerialNumber = serial, DeviceName = hostname, Debug = IsDebug };
+            var payload = new { Manufacturer = manufacturer, Model = model, SerialNumber = serial, DeviceName = hostname, Debug = IsDebug };
 
             var response = await _httpClient.PostAsJsonAsync(_apiEndpointCheckMigration, payload);
             

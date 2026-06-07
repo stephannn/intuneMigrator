@@ -96,6 +96,8 @@ public class MigrateController : ControllerBase
             {
                 Id = migrationId,
                 Status = status,
+                Manufacturer = request.Manufacturer,
+                Model = request.Model,
                 SerialNumber = request.SerialNumber,
                 DeviceName = request.DeviceName,
                 Message = message,
@@ -120,7 +122,10 @@ public class MigrateController : ControllerBase
             var shouldRemoveDevice = migrationConfig.GetValue<bool>("DeviceRemoval");
             _logger.LogDebug("DeviceRemoval setting: {Value}", shouldRemoveDevice);
 
-            var existingDevice = await DeviceManagementService.GetDeviceAsync(_graphServiceClientSource, serialNumber: request.SerialNumber, deviceName: request.DeviceName, logger: _logger);
+            var autoPilotVersion = migrationConfig.GetValue<int?>("AutopilotVersion") ?? 1;
+            _logger.LogDebug("AutopilotVersion setting: {Value}", autoPilotVersion);
+
+            var existingDevice = await DeviceManagementService.GetDeviceRegistrationAsync(_graphServiceClientSource, serialNumber: request.SerialNumber, deviceName: request.DeviceName, logger: _logger);
                                 
             if (existingDevice == null && mustDeviceExistInSource == true)
             {
@@ -190,20 +195,47 @@ public class MigrateController : ControllerBase
                 try
                 {
                     
-                    var resultAddDevice = await DeviceManagementService.AddDeviceAsync(_graphServiceClientDestination, new DeviceIdentityModel
+                    if(autoPilotVersion == 1)
                     {
-                        serialNumber = request.SerialNumber,
-                        hardwareHash = request.HardwareHash,
-                        groupTag = groupTag
-                    }, _logger, request.Debug);
+                        var resultAddDevice = await DeviceManagementService.AddDeviceAsync(_graphServiceClientDestination, new DeviceIdentityModel
+                        {
+                            serialNumber = request.SerialNumber,
+                            hardwareHash = request.HardwareHash,
+                            groupTag = groupTag
+                        }, _logger, request.Debug);
 
-                    if (resultAddDevice != null)
+                        if (resultAddDevice != null)
+                        {
+                            await LogStatus(MigrationStatus.AddedToDestination, "Device added to destination");
+                        } else {
+                            await LogStatus(MigrationStatus.Failed, "Failed to add device to destination.");
+                            return StatusCode(500, new { Message = "Failed to add device to destination tenant.", Status = "Error" });
+                        }
+                    }
+                    if(autoPilotVersion == 2)
                     {
-                        await LogStatus(MigrationStatus.AddedToDestination, "Device added to destination");
-                    } else
-                    {
-                        await LogStatus(MigrationStatus.Failed, "Failed to add device to destination.");
-                        return StatusCode(500, new { Message = "Failed to add device to destination tenant.", Status = "Error" });
+                        if (request.Manufacturer != null && request.Model != null)
+                        {            
+                            var resultAddDevice = await DeviceManagementService.AddDeviceByCorporateIdentifierAsync(_graphServiceClientDestination, new DeviceCorporateIdentityModel
+                            {
+                                manufacturer = request.Manufacturer,
+                                model = request.Model,
+                                serialNumber = request.SerialNumber
+                            }, _logger, request.Debug);
+
+                            if (resultAddDevice == true)
+                            {
+                                await LogStatus(MigrationStatus.AddedToDestination, "Device added to destination");
+                            } else {
+                                await LogStatus(MigrationStatus.Failed, "Failed to add device to destination.");
+                                return StatusCode(500, new { Message = "Failed to add device to destination tenant.", Status = "Error" });
+                            }
+
+                        } else
+                        {
+                            await LogStatus(MigrationStatus.Failed, "Manufacturer and Model are required for AutopilotVersion 2.");
+                            return BadRequest(new { Message = "Manufacturer and Model are required for AutopilotVersion 2.", Status = "Error" });
+                        }
                     }
                 }
                 catch (ServiceException ex)
@@ -269,7 +301,7 @@ public class MigrateController : ControllerBase
             _logger.LogDebug("SourceTenantDeviceMustExists setting: {Value}", mustDeviceExistInSource);
 
             _logger.LogInformation("Checking device existence for Device: {DeviceName}, Serial: {SerialNumber}", request.DeviceName, request.SerialNumber);
-            var existingDevice = await DeviceManagementService.GetDeviceAsync(_graphServiceClientSource, serialNumber: request.SerialNumber, deviceName: request.DeviceName, logger: _logger);
+            var existingDevice = await DeviceManagementService.GetDeviceRegistrationAsync(_graphServiceClientSource, serialNumber: request.SerialNumber, deviceName: request.DeviceName, logger: _logger);
        
             if (existingDevice == null)
             {
@@ -283,7 +315,7 @@ public class MigrateController : ControllerBase
 
             // check if exists in new tenant already
             _logger.LogDebug("Checking device existence in destination tenant for Serial: {SerialNumber}", request.SerialNumber);
-            var deviceInDestination = await DeviceManagementService.GetDeviceAsync(_graphServiceClientDestination, serialNumber: request.SerialNumber, logger: _logger);
+            var deviceInDestination = await DeviceManagementService.GetDeviceRegistrationAsync(_graphServiceClientDestination, serialNumber: request.SerialNumber, logger: _logger);
 
             if (deviceInDestination != null)
             {

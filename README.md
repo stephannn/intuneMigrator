@@ -176,6 +176,8 @@ The Web API supports migrating devices from multiple source Intune tenants into 
 
 When a user logs into the Client App, their assigned App Role (e.g., `Migrator.TenantA`) is sent to the API via their authentication token. The API uses this role to select the correct source tenant credentials and custom migration behavior from `appsettings.json`.
 
+The parameter AutoPilotVersion defines if it uses the autopilot based on the Client Hash (1) or Windows Autopilot Device Preparation bases on the hardware model and serial number (2). Default is option 1.
+
 Example `appsettings.json` backend structure:
 ```json
 {
@@ -191,7 +193,8 @@ Example `appsettings.json` backend structure:
         "SourceTenantDeviceMustExists": false,
         "DeviceRegistrationRemoval": true,
         "DeviceRemoval": false,
-        "GroupTag": "MigrateGroupTag"
+        "GroupTag": "MigrateGroupTag",
+        "AutoPilotVersion": 1
       }
     }
   }

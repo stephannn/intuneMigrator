@@ -9,6 +9,8 @@ namespace intuneMigratorApi.Models
     {
         public Guid Id { get; set; }
         public MigrationStatus Status { get; set; }
+        public string? Manufacturer { get; set; }
+        public string? Model { get; set; }
         public string? SerialNumber { get; set; }
         public string? DeviceName { get; set; }
         public string? Message { get; set; }
