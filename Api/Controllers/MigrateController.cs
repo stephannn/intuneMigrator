@@ -134,6 +134,7 @@ public class MigrateController : ControllerBase
             }
 
             bool removalRegistrationSuccess = false;
+            bool removalCorporateIdentifierSuccess = false;
             bool removalSuccess = false;
 
             if (existingDevice != null)
@@ -153,7 +154,8 @@ public class MigrateController : ControllerBase
 
                 // Remove device registration from source
                 if (shouldRemoveDeviceRegistration)
-                {
+                {  
+                    // Autopilot v1
                     removalRegistrationSuccess = await DeviceManagementService.RemoveDeviceRegistrationAsync(_graphServiceClientSource, serialNumber: existingDevice.Id, logger: _logger, debug: request.Debug);
                     
                     if (removalRegistrationSuccess) {
@@ -186,6 +188,28 @@ public class MigrateController : ControllerBase
                     _logger.LogInformation("DeviceRemoval is false, skipping device removal for Serial: {SerialNumber}", existingDevice.SerialNumber);
                 }
 
+            }
+
+            // Autopilot v2
+            if(shouldRemoveDeviceRegistration && autoPilotVersion == 2)
+            {
+                var existingDeviceCorporateIdentifier = await DeviceManagementService.GetDeviceByCorporateIdentifierAsync(_graphServiceClientSource, request.Manufacturer, request.Model, request.SerialNumber, _logger);
+
+                if (existingDeviceCorporateIdentifier != null)
+                {
+                    removalCorporateIdentifierSuccess = await DeviceManagementService.RemoveDeviceByCorporateIdentifierAsync(_graphServiceClientSource, request.Manufacturer, request.Model, request.SerialNumber, _logger, request.Debug);
+                    
+                    if (removalCorporateIdentifierSuccess) {
+                        await LogStatus(MigrationStatus.RemovedFromSource, "Device registration removed from source");
+                    } else
+                    {
+                        await LogStatus(MigrationStatus.Failed, "Failed to remove device registration from source.");
+                        return StatusCode(500, new { Message = "Failed to remove device registration from source tenant.", Status = "Error" });
+                    }
+                } else
+                {
+                    _logger.LogInformation("Device with corporate identifier already removed or does not exist, skipping removal for Serial: {SerialNumber}", request.SerialNumber);
+                }
             }
 
             if ((removalRegistrationSuccess || !shouldRemoveDeviceRegistration) && (removalSuccess || !shouldRemoveDevice) || (mustDeviceExistInSource == false && existingDevice == null))

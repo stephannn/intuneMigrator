@@ -44,4 +44,6 @@ logs/
 
 # database
 *.db
+*.db-shm
+*.db-wal
 *.sqlite

@@ -230,6 +230,112 @@ public static class DeviceManagementService
     }
 
     /// <summary>
+    /// Find a device by the corporate identifier (manufacturer, model, serial number) and return the device ID if found.
+    /// </summary>
+    public static async Task<string?> GetDeviceByCorporateIdentifierAsync(GraphServiceClient graphServiceClient, string? manufacturer, string? model, string? serialNumber, ILogger? logger = null)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(manufacturer) || string.IsNullOrEmpty(model) || string.IsNullOrEmpty(serialNumber))
+            {
+                logger?.LogWarning("Manufacturer, Model, and SerialNumber must be provided for corporate identifier search.");
+                return null;
+            }
+
+            string cleanManufacturer = manufacturer.Trim();
+            string cleanModel = model.Trim();
+            string cleanSerialNumber = serialNumber.Trim().Replace("_", ""); // Remove any underscores which are used as delimiters in our logic
+            string exactIdentifier = $"{cleanManufacturer},{cleanModel},{cleanSerialNumber}";
+
+            var requestUrl = $"https://graph.microsoft.com/beta/deviceManagement/importedDeviceIdentities?$filter=contains(importedDeviceIdentifier,'{exactIdentifier}')&$top=50";
+            
+            while (!string.IsNullOrEmpty(requestUrl))
+            {
+                var httpRequest = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+                
+                await graphServiceClient.AuthenticationProvider.AuthenticateRequestAsync(httpRequest);
+                
+                var response = await graphServiceClient.HttpProvider.SendAsync(httpRequest);
+                
+                if (response.StatusCode == System.Net.HttpStatusCode.BadRequest && requestUrl.Contains("$filter"))
+                {
+                    logger?.LogWarning("Filter not supported on importedDeviceIdentities. Falling back to client-side filtering.");
+                    requestUrl = "https://graph.microsoft.com/beta/deviceManagement/importedDeviceIdentities?$top=50";
+                    continue;
+                }
+
+                response.EnsureSuccessStatusCode();
+
+                var jsonString = await response.Content.ReadAsStringAsync();
+                using var jsonDoc = JsonDocument.Parse(jsonString);
+
+                if (jsonDoc.RootElement.TryGetProperty("value", out var valueArray))
+                {
+                    foreach (var element in valueArray.EnumerateArray())
+                    {
+                        var identifier = element.TryGetProperty("importedDeviceIdentifier", out var idProp) ? idProp.GetString() : null;
+                        var type = element.TryGetProperty("importedDeviceIdentityType", out var typeProp) ? typeProp.GetString() : null;
+                        
+                        // Client-side exact match check for the corporate identifier and type
+                        if (string.Equals(identifier, exactIdentifier, StringComparison.OrdinalIgnoreCase) && 
+                            string.Equals(type, "manufacturerModelSerial", StringComparison.OrdinalIgnoreCase))
+                        {
+                            return element.TryGetProperty("id", out var idElement) ? idElement.GetString() : null;
+                        }
+                    }
+                }
+
+                requestUrl = jsonDoc.RootElement.TryGetProperty("@odata.nextLink", out var nextLinkProp) ? nextLinkProp.GetString() : null;
+            }
+            
+            return null;
+        }
+        catch (Exception ex)
+        {
+            logger?.LogError(ex, "Error searching for corporate device with SerialNumber: {SerialNumber}", serialNumber);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Delete a device by the corporate identifier (manufacturer, model, serial number).
+    /// </summary>
+    public static async Task<bool> RemoveDeviceByCorporateIdentifierAsync(GraphServiceClient graphServiceClient, string? manufacturer, string? model, string? serialNumber, ILogger? logger = null, bool debug = false)
+    {
+        if (debug)
+        {
+            logger?.LogInformation("Debug: Simulating RemoveDeviceByCorporateIdentifierAsync for device: {Manufacturer},{Model},{SerialNumber}", manufacturer, model, serialNumber);
+            return true;
+        }
+
+        string? deviceId = await GetDeviceByCorporateIdentifierAsync(graphServiceClient, manufacturer, model, serialNumber, logger);
+
+        if (string.IsNullOrEmpty(deviceId))
+        {
+            logger?.LogWarning("Corporate device not found for deletion: {Manufacturer},{Model},{SerialNumber}", manufacturer, model, serialNumber);
+            return false;
+        }
+
+        try
+        {
+            var requestUrl = $"https://graph.microsoft.com/beta/deviceManagement/importedDeviceIdentities/{deviceId}";
+            var httpRequest = new HttpRequestMessage(HttpMethod.Delete, requestUrl);
+            await graphServiceClient.AuthenticationProvider.AuthenticateRequestAsync(httpRequest);
+            
+            var response = await graphServiceClient.HttpProvider.SendAsync(httpRequest);
+            response.EnsureSuccessStatusCode();
+            
+            logger?.LogInformation("Deleted corporate device registration: {Id}", deviceId);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            logger?.LogError(ex, "Error deleting corporate device registration: {Id}", deviceId);
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Add a new device by the corporate identifier (manufacturer, model, serial number)
     /// </summary>
     public static async Task<bool> AddDeviceByCorporateIdentifierAsync(GraphServiceClient graphServiceClient, DeviceCorporateIdentityModel deviceIdentity, ILogger? logger = null, bool debug = false)
